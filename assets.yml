@@ -8,4 +8,6 @@ assets.cpp:
   assets/monofonto.regular.ttf:
     name: font
     height: 16
+  assets/spritesheet.png:
+    name: spritesheet
 

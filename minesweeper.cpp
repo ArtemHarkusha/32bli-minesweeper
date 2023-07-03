@@ -6,14 +6,60 @@ using namespace blit;
 
 #define SCREEN_HEIGHT 240
 #define SCREEN_WEIGHT 320
+#define TILE_SIZE 24
+
+#define MAP_SIZE 8
 #define SHOW_FPS
 
+struct tiles {
+    Rect CLOSED = Rect(0, 0, 3, 3);
+};
+
+tiles GAME_TILES;
+
+// to describe 1 Tile on the battlefield
+class Tile {
+    public:
+        bool isBomb = false;
+        bool isFlagged = false;
+        bool isQuestionMarked = false;
+        bool isOpened = false;
+        int  bombsNearby = -1;
+};
 
 
-void init() {
-    set_screen_mode(ScreenMode::hires);
+class  Minesweeper {
+    public:
+        Tile MAP[MAP_SIZE + 2][MAP_SIZE + 2] {};
+        void render();
+        void plantBombs(int);
+};
+
+void Minesweeper::render(){
+    screen.pen = Pen(0, 255, 0);
+    for (int y = 0; y < MAP_SIZE; y++){
+        for (int x = 0; x < MAP_SIZE; x++){
+            if(! MAP[y + 1][x + 1].isOpened && ! MAP[y + 1][x + 1].isBomb){
+                screen.sprite(GAME_TILES.CLOSED, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+        }
+    }
+    
 }
 
+void Minesweeper::plantBombs(int number){
+    int x, y;
+    while (number != 0){
+        x = blit::random() % MAP_SIZE;
+        y = blit::random() % MAP_SIZE;
+        if (! MAP[x + 1][y + 1].isBomb){
+            MAP[x + 1][y + 1].isBomb = true;
+            number--;
+        }
+    }
+}
+
+Minesweeper test;
 
 #ifdef SHOW_FPS
     void draw_fps(uint32_t &ms_start, uint32_t &ms_end) {
@@ -49,6 +95,16 @@ void init() {
     }
 #endif
 
+
+void init() {
+    set_screen_mode(ScreenMode::hires);
+    screen.sprites = Surface::load(spritesheet);
+    screen.pen = Pen(0, 0, 0);
+    screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
+    test.plantBombs(10);
+
+}
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // render(time)
@@ -56,11 +112,16 @@ void init() {
 // This function is called to perform rendering of the game. time is the 
 // amount if milliseconds elapsed since the start of your game
 //
+
+
 void render(uint32_t time) {
 
     #ifdef SHOW_FPS
         uint32_t ms_start = now();
     #endif
+
+    
+    test.render();
 
     #ifdef SHOW_FPS
         uint32_t ms_end = now();
