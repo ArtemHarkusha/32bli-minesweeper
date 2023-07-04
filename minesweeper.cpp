@@ -9,7 +9,7 @@ using namespace blit;
 #define TILE_SIZE 24
 
 #define MAP_SIZE 8
-#define BOMBS_NUMBER 10
+#define BOMBS_NUMBER 20
 #define SHOW_FPS
 
 struct tiles {
@@ -31,6 +31,12 @@ struct tiles {
 };
 
 tiles GAME_TILES;
+
+void clearScreen(){
+    screen.clear();
+    screen.pen = Pen(0, 0, 0);
+    screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
+}
 
 // to describe 1 Tile on the battlefield
 class Tile {
@@ -68,11 +74,41 @@ class  Minesweeper {
         Tile MAP[MAP_SIZE + 2][MAP_SIZE + 2] {};
         Point CursorLocation = Point(0, 0);
         int BOMBS = BOMBS_NUMBER;
+        void newGame();
         void render();
         void plantBombs();
         void update();
         void checkTile(Point);
 };
+
+// game manager
+class GameManager {
+    public:
+        bool inMenu = false;
+        bool inGame = false;
+        Minesweeper GAME;
+        void newGame();
+        void update();
+        void render();
+};
+
+void GameManager::newGame(){
+    GAME = Minesweeper();
+    GAME.plantBombs();
+    inGame = true;
+}
+
+void GameManager::render(){
+    if (inGame){
+        GAME.render();
+    }
+}
+
+void GameManager::update(){
+    if (inGame){
+        GAME.update();
+    }
+}
 
 void Minesweeper::checkTile(Point location){
     int bombsCounter = 0;
@@ -130,7 +166,7 @@ void Minesweeper::checkTile(Point location){
 }
 
 void Minesweeper::render(){
-    screen.pen = Pen(0, 255, 0);
+    clearScreen();
     for (int y = 0; y < MAP_SIZE; y++){
         for (int x = 0; x < MAP_SIZE; x++){
             if(! MAP[y + 1][x + 1].isOpened){
@@ -224,7 +260,8 @@ void Minesweeper::plantBombs(){
     }
 }
 
-Minesweeper test;
+GameManager GM;
+//Minesweeper test;
 
 #ifdef SHOW_FPS
     void draw_fps(uint32_t &ms_start, uint32_t &ms_end) {
@@ -266,8 +303,7 @@ void init() {
     screen.sprites = Surface::load(spritesheet);
     screen.pen = Pen(0, 0, 0);
     screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
-    test.plantBombs();
-
+    GM.newGame();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -286,7 +322,7 @@ void render(uint32_t time) {
     #endif
 
     
-    test.render();
+    GM.render();
 
     #ifdef SHOW_FPS
         uint32_t ms_end = now();
@@ -303,5 +339,5 @@ void render(uint32_t time) {
 // amount if milliseconds elapsed since the start of your game
 //
 void update(uint32_t time) {
-    test.update();
+    GM.update();
 }
