@@ -9,10 +9,25 @@ using namespace blit;
 #define TILE_SIZE 24
 
 #define MAP_SIZE 8
+#define BOMBS_NUMBER 10
 #define SHOW_FPS
 
 struct tiles {
     Rect CLOSED = Rect(0, 0, 3, 3);
+
+    Rect EMPTY = Rect(6, 0, 3, 3);
+    Rect ONE   = Rect(12, 0, 3, 3);
+    Rect TWO   = Rect(15, 0, 3, 3);
+    Rect THREE = Rect(18, 0, 3, 3);
+    Rect FOUR  = Rect(21, 0, 3, 3);
+    Rect FIVE  = Rect(24, 0, 3, 3);
+    Rect SIX   = Rect(27, 0, 3, 3);
+    Rect SEVEN = Rect(30, 0, 3, 3);
+    Rect EIGHT = Rect(33, 0, 3, 3);
+
+    Rect FLAG  = Rect(3, 0, 3, 3);
+    Rect QUESTION = Rect(9, 0, 3, 3);
+    Rect CURSOR = Rect(36, 0, 1, 3);
 };
 
 tiles GAME_TILES;
@@ -25,36 +40,186 @@ class Tile {
         bool isQuestionMarked = false;
         bool isOpened = false;
         int  bombsNearby = -1;
+
+        void bKeyHandler();
 };
 
+void Tile::bKeyHandler() {
+    if (isOpened){
+        return; 
+    }
+    if (! isFlagged && ! isQuestionMarked){
+        isFlagged = true;
+        return;
+    }
+    if (isFlagged && ! isQuestionMarked){
+        isFlagged = false;
+        isQuestionMarked = true;
+        return;
+    }
+    if (! isFlagged && isQuestionMarked) {
+        isQuestionMarked = false;
+        return;
+    }
+}
 
 class  Minesweeper {
     public:
         Tile MAP[MAP_SIZE + 2][MAP_SIZE + 2] {};
+        Point CursorLocation = Point(0, 0);
+        int BOMBS = BOMBS_NUMBER;
         void render();
-        void plantBombs(int);
+        void plantBombs();
+        void update();
+        void checkTile(Point);
 };
+
+void Minesweeper::checkTile(Point location){
+    int bombsCounter = 0;
+
+    if (location.x < 1 || location.y < 1 || location.x > MAP_SIZE || location.y > MAP_SIZE){
+        return;
+    }
+    if (MAP[location.y][location.x].isOpened || MAP[location.y][location.x].isFlagged 
+            || MAP[location.y][location.x].isQuestionMarked){
+        return;
+    }
+    if (MAP[location.y][location.x].isBomb){
+        // TODO: Gameover here
+        MAP[location.y][location.x].isOpened = true;
+        return;
+    }
+    if (MAP[location.y + 1][location.x - 1].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y + 1][location.x].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y + 1][location.x + 1].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y][location.x - 1].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y][location.x + 1].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y - 1][location.x - 1].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y - 1][location.x].isBomb){
+        bombsCounter++;
+    }
+    if (MAP[location.y - 1][location.x + 1].isBomb){
+        bombsCounter++;
+    }
+
+    MAP[location.y][location.x].isOpened = true;
+    MAP[location.y][location.x].bombsNearby = bombsCounter;
+    // flood-fill recursion calls to open the entire area
+    if (bombsCounter == 0){
+        checkTile(location + Point(1, -1));
+        checkTile(location + Point(1, 0));
+        checkTile(location + Point(1, 1));
+        checkTile(location + Point(0, -1));
+        checkTile(location + Point(0, 1));
+        checkTile(location + Point(-1, 1));
+        checkTile(location + Point(-1, 0));
+        checkTile(location + Point(-1, 1));
+    }
+}
 
 void Minesweeper::render(){
     screen.pen = Pen(0, 255, 0);
     for (int y = 0; y < MAP_SIZE; y++){
         for (int x = 0; x < MAP_SIZE; x++){
-            if(! MAP[y + 1][x + 1].isOpened && ! MAP[y + 1][x + 1].isBomb){
+            if(! MAP[y + 1][x + 1].isOpened){
                 screen.sprite(GAME_TILES.CLOSED, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
             }
+            if(MAP[y + 1][x + 1].bombsNearby == 0){
+                screen.sprite(GAME_TILES.EMPTY, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 1){
+                screen.sprite(GAME_TILES.ONE, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 2){
+                screen.sprite(GAME_TILES.TWO, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 3){
+                screen.sprite(GAME_TILES.THREE, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 4){
+                screen.sprite(GAME_TILES.FOUR, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 5){
+                screen.sprite(GAME_TILES.FIVE, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 6){
+                screen.sprite(GAME_TILES.SIX, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 7){
+                screen.sprite(GAME_TILES.SEVEN, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].bombsNearby == 8){
+                screen.sprite(GAME_TILES.EIGHT, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].isFlagged){
+                screen.sprite(GAME_TILES.FLAG, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            if(MAP[y + 1][x + 1].isQuestionMarked){
+                screen.sprite(GAME_TILES.QUESTION, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
+            
         }
     }
-    
+    screen.pen = Pen(0, 255, 0);
+    screen.circle(Point(10 + 12 + CursorLocation.x * TILE_SIZE, 10 + 12 + CursorLocation.y * TILE_SIZE), 2);
+    // TODO: draw normal sprite for the cursor.
+    //screen.sprite(GAME_TILES.CURSOR, Point(10 + 12 + CursorLocation.x * TILE_SIZE, 10 + CursorLocation.y * TILE_SIZE));
 }
 
-void Minesweeper::plantBombs(int number){
+void Minesweeper::update(){
+    if (buttons.released & Button::DPAD_RIGHT){
+        CursorLocation += Point(1, 0);
+        if (CursorLocation.x >= MAP_SIZE){
+           CursorLocation.x = 0;
+        }
+    }
+    if (buttons.released & Button::DPAD_LEFT){
+        CursorLocation -= Point(1, 0);
+        if (CursorLocation.x < 0){
+            CursorLocation.x = MAP_SIZE - 1;
+        }
+    }
+    if (buttons.released & Button::DPAD_DOWN){
+        CursorLocation += Point(0, 1);
+        if (CursorLocation.y >= MAP_SIZE){
+            CursorLocation.y = 0;
+        }
+    }
+    if (buttons.released & Button::DPAD_UP){
+        CursorLocation -= Point(0, 1);
+        if (CursorLocation.y < 0){
+            CursorLocation.y = MAP_SIZE - 1;
+        }
+    }
+    if (buttons.released & Button::A){
+        checkTile(Point(CursorLocation.x + 1, CursorLocation.y + 1));
+    }
+    if (buttons.released & Button::B){
+        MAP[CursorLocation.y + 1][CursorLocation.x + 1].bKeyHandler();
+    }
+}
+
+void Minesweeper::plantBombs(){
     int x, y;
-    while (number != 0){
+    int toPlant = BOMBS;
+    while (toPlant != 0){
         x = blit::random() % MAP_SIZE;
         y = blit::random() % MAP_SIZE;
         if (! MAP[x + 1][y + 1].isBomb){
             MAP[x + 1][y + 1].isBomb = true;
-            number--;
+            toPlant--;
         }
     }
 }
@@ -101,7 +266,7 @@ void init() {
     screen.sprites = Surface::load(spritesheet);
     screen.pen = Pen(0, 0, 0);
     screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
-    test.plantBombs(10);
+    test.plantBombs();
 
 }
 
@@ -138,5 +303,5 @@ void render(uint32_t time) {
 // amount if milliseconds elapsed since the start of your game
 //
 void update(uint32_t time) {
-    
+    test.update();
 }
