@@ -120,9 +120,10 @@ void Minesweeper::checkTile(Point location){
         return;
     }
     if (MAP[location.y][location.x].isBomb){
-        // TODO: Gameover here
         MAP[location.y][location.x].isOpened = true;
-        gameOver = true;
+        if (Point(location.x, location.y) == CursorLocation + Point(1, 1)){
+            gameOver = true;
+        }
         return;
     }
     if (MAP[location.y + 1][location.x - 1].isBomb){
