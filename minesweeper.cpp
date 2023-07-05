@@ -28,6 +28,7 @@ struct tiles {
     Rect FLAG  = Rect(3, 0, 3, 3);
     Rect QUESTION = Rect(9, 0, 3, 3);
     Rect BOMB = Rect(36, 0, 3, 3);
+    Rect BOMB_RED = Rect(39, 0, 3, 3);
 };
 
 tiles GAME_TILES;
@@ -222,7 +223,9 @@ void Minesweeper::render(){
             if(MAP[y + 1][x + 1].isBomb && MAP[y + 1][x + 1].isOpened){
                 screen.sprite(GAME_TILES.BOMB, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
             }
-            
+            if(MAP[y + 1][x + 1].isBomb && MAP[y + 1][x + 1].isOpened && Point(x, y) == CursorLocation){
+                screen.sprite(GAME_TILES.BOMB_RED, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
         }
     }
     screen.pen = Pen(0, 255, 0);
