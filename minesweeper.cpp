@@ -164,9 +164,19 @@ void Minesweeper::checkTile(Point location){
         checkTile(location + Point(-1, 1));
     }
 
-    if (tilesOpened == tilesToOpen){
+    if (tilesOpened == tilesToOpen && ! gameOver){
         win = true;
     }
+}
+
+void Minesweeper::openAllTiles(){
+    for (int y = 0; y < MAP_SIZE; y++){
+        for (int x = 0; x < MAP_SIZE; x++){
+            MAP[y + 1][x + 1].isQuestionMarked = false;
+            MAP[y + 1][x + 1].isFlagged = false;
+            checkTile(Point(y + 1, x + 1));
+        }
+    } 
 }
 
 void Minesweeper::render(){
@@ -255,6 +265,9 @@ void Minesweeper::update(){
     }
     if (buttons.pressed & Button::B){
         MAP[CursorLocation.y + 1][CursorLocation.x + 1].bKeyHandler();
+    }
+    if (win || gameOver){
+        openAllTiles();
     }
 }
 

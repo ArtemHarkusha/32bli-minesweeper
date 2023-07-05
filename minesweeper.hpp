@@ -30,6 +30,7 @@ class  Minesweeper {
         void plantBombs(blit::Point);
         void update();
         void checkTile(blit::Point);
+        void openAllTiles();
 };
 
 // game manager
