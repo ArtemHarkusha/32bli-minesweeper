@@ -1,10 +1,10 @@
-title: "minesweeper"
+title: "Minesweeper"
 description: "Minesweeper game for 32blit console"
 author: Artem Harkusha
 splash:
   file: assets/no-image.png
 icon:
-  file: assets/no-icon.png
-version: v0.0.1
+  file: assets/icon.png
+version: v0.0.2
 category: game # game, demo, utility, ...
 url: https://github.com/ArtemHarkusha/32blit-minesweeper

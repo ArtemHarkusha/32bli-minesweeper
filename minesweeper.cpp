@@ -27,28 +27,18 @@ struct tiles {
 
     Rect FLAG  = Rect(3, 0, 3, 3);
     Rect QUESTION = Rect(9, 0, 3, 3);
-    Rect CURSOR = Rect(36, 0, 1, 3);
+    Rect BOMB = Rect(36, 0, 3, 3);
 };
 
 tiles GAME_TILES;
+
+GameManager GM;
 
 void clearScreen(){
     screen.clear();
     screen.pen = Pen(0, 0, 0);
     screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
 }
-
-// to describe 1 Tile on the battlefield
-class Tile {
-    public:
-        bool isBomb = false;
-        bool isFlagged = false;
-        bool isQuestionMarked = false;
-        bool isOpened = false;
-        int  bombsNearby = -1;
-
-        void bKeyHandler();
-};
 
 void Tile::bKeyHandler() {
     if (isOpened){
@@ -69,45 +59,37 @@ void Tile::bKeyHandler() {
     }
 }
 
-class  Minesweeper {
-    public:
-        Tile MAP[MAP_SIZE + 2][MAP_SIZE + 2] {};
-        Point CursorLocation = Point(0, 0);
-        int BOMBS = BOMBS_NUMBER;
-        void newGame();
-        void render();
-        void plantBombs();
-        void update();
-        void checkTile(Point);
-};
-
-// game manager
-class GameManager {
-    public:
-        bool inMenu = false;
-        bool inGame = false;
-        Minesweeper GAME;
-        void newGame();
-        void update();
-        void render();
-};
-
 void GameManager::newGame(){
     GAME = Minesweeper();
-    GAME.plantBombs();
     inGame = true;
 }
 
 void GameManager::render(){
+    if (inGameOver){
+        screen.pen = Pen(0, 255, 0);
+        //screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
+        screen.text("GAME OVER", font, Point(120, 120));
+        return;
+    }
     if (inGame){
         GAME.render();
+        return;
     }
 }
 
 void GameManager::update(){
+    if (inGameOver){
+        if (buttons.released & Button::B){
+            inGameOver = false;
+            newGame();
+        }
+        return;
+    }
     if (inGame){
         GAME.update();
+        return;
     }
+    
 }
 
 void Minesweeper::checkTile(Point location){
@@ -123,6 +105,7 @@ void Minesweeper::checkTile(Point location){
     if (MAP[location.y][location.x].isBomb){
         // TODO: Gameover here
         MAP[location.y][location.x].isOpened = true;
+        GM.inGameOver = true;
         return;
     }
     if (MAP[location.y + 1][location.x - 1].isBomb){
@@ -159,7 +142,7 @@ void Minesweeper::checkTile(Point location){
         checkTile(location + Point(1, 1));
         checkTile(location + Point(0, -1));
         checkTile(location + Point(0, 1));
-        checkTile(location + Point(-1, 1));
+        checkTile(location + Point(-1, -1));
         checkTile(location + Point(-1, 0));
         checkTile(location + Point(-1, 1));
     }
@@ -205,6 +188,9 @@ void Minesweeper::render(){
             if(MAP[y + 1][x + 1].isQuestionMarked){
                 screen.sprite(GAME_TILES.QUESTION, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
             }
+            if(MAP[y + 1][x + 1].isBomb && MAP[y + 1][x + 1].isOpened){
+                screen.sprite(GAME_TILES.BOMB, Point(10 + x * TILE_SIZE, 10 + y * TILE_SIZE));
+            }
             
         }
     }
@@ -215,53 +201,64 @@ void Minesweeper::render(){
 }
 
 void Minesweeper::update(){
-    if (buttons.released & Button::DPAD_RIGHT){
+    if (buttons.pressed & Button::DPAD_RIGHT){
         CursorLocation += Point(1, 0);
         if (CursorLocation.x >= MAP_SIZE){
            CursorLocation.x = 0;
         }
     }
-    if (buttons.released & Button::DPAD_LEFT){
+    if (buttons.pressed & Button::DPAD_LEFT){
         CursorLocation -= Point(1, 0);
         if (CursorLocation.x < 0){
             CursorLocation.x = MAP_SIZE - 1;
         }
     }
-    if (buttons.released & Button::DPAD_DOWN){
+    if (buttons.pressed & Button::DPAD_DOWN){
         CursorLocation += Point(0, 1);
         if (CursorLocation.y >= MAP_SIZE){
             CursorLocation.y = 0;
         }
     }
-    if (buttons.released & Button::DPAD_UP){
+    if (buttons.pressed & Button::DPAD_UP){
         CursorLocation -= Point(0, 1);
         if (CursorLocation.y < 0){
             CursorLocation.y = MAP_SIZE - 1;
         }
     }
-    if (buttons.released & Button::A){
+    if (buttons.pressed & Button::A){
+        if (firstMove) {
+            plantBombs(Point(CursorLocation.y + 1, CursorLocation.x + 1));
+            firstMove = false;
+        }
         checkTile(Point(CursorLocation.x + 1, CursorLocation.y + 1));
     }
-    if (buttons.released & Button::B){
+    if (buttons.pressed & Button::B){
         MAP[CursorLocation.y + 1][CursorLocation.x + 1].bKeyHandler();
     }
 }
 
-void Minesweeper::plantBombs(){
-    int x, y;
+void Minesweeper::plantBombs(Point safeSpot){
     int toPlant = BOMBS;
+    Point bombLocation;
     while (toPlant != 0){
-        x = blit::random() % MAP_SIZE;
-        y = blit::random() % MAP_SIZE;
-        if (! MAP[x + 1][y + 1].isBomb){
-            MAP[x + 1][y + 1].isBomb = true;
-            toPlant--;
+
+        bombLocation.x = blit::random() % MAP_SIZE + 1;
+        bombLocation.y = blit::random() % MAP_SIZE + 1;
+
+        if ((bombLocation == safeSpot) || (bombLocation == safeSpot + Point(1, -1)) || 
+            (bombLocation == safeSpot + Point(1, 0)) || (bombLocation == safeSpot + Point(1, 1)) ||
+            (bombLocation== safeSpot + Point(0, -1)) || (bombLocation == safeSpot + Point(0, 1)) || 
+            (bombLocation == safeSpot + Point(-1, -1)) || (bombLocation == safeSpot + Point(-1, 1)) ||
+            (bombLocation == safeSpot + Point(-1, 0)) || (MAP[bombLocation.x][bombLocation.y].isBomb) )
+        {
+            continue;
         }
+ 
+        MAP[bombLocation.x][bombLocation.y].isBomb = true;
+        toPlant--;
+        
     }
 }
-
-GameManager GM;
-//Minesweeper test;
 
 #ifdef SHOW_FPS
     void draw_fps(uint32_t &ms_start, uint32_t &ms_end) {
