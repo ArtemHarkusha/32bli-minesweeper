@@ -9,7 +9,7 @@ using namespace blit;
 #define TILE_SIZE 24
 
 #define MAP_SIZE 8
-#define BOMBS_NUMBER 20
+#define BOMBS_NUMBER 10
 #define SHOW_FPS
 
 struct tiles {
@@ -65,15 +65,18 @@ void GameManager::newGame(){
 }
 
 void GameManager::render(){
+    if (inGame || inGameOver || inWin){
+        GAME.render();
+    }
     if (inGameOver){
         screen.pen = Pen(0, 255, 0);
         //screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
         screen.text("GAME OVER", font, Point(120, 120));
-        return;
     }
-    if (inGame){
-        GAME.render();
-        return;
+    if (inWin){
+        screen.pen = Pen(0, 255, 0);
+        //screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
+        screen.text("WIN!!!", font, Point(120, 120));
     }
 }
 
@@ -85,8 +88,21 @@ void GameManager::update(){
         }
         return;
     }
+    if (inWin){
+        if (buttons.released & Button::B){
+            inWin = false;
+            newGame();
+        }
+        return;
+    }
     if (inGame){
         GAME.update();
+        if (GAME.gameOver){
+            inGameOver = true;
+        }
+        if (GAME.win){
+            inWin = true;
+        }
         return;
     }
     
@@ -105,7 +121,7 @@ void Minesweeper::checkTile(Point location){
     if (MAP[location.y][location.x].isBomb){
         // TODO: Gameover here
         MAP[location.y][location.x].isOpened = true;
-        GM.inGameOver = true;
+        gameOver = true;
         return;
     }
     if (MAP[location.y + 1][location.x - 1].isBomb){
@@ -133,6 +149,7 @@ void Minesweeper::checkTile(Point location){
         bombsCounter++;
     }
 
+    tilesOpened++;
     MAP[location.y][location.x].isOpened = true;
     MAP[location.y][location.x].bombsNearby = bombsCounter;
     // flood-fill recursion calls to open the entire area
@@ -145,6 +162,10 @@ void Minesweeper::checkTile(Point location){
         checkTile(location + Point(-1, -1));
         checkTile(location + Point(-1, 0));
         checkTile(location + Point(-1, 1));
+    }
+
+    if (tilesOpened == tilesToOpen){
+        win = true;
     }
 }
 
