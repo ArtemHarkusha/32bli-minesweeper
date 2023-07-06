@@ -71,12 +71,10 @@ void GameManager::render(){
     }
     if (inGameOver){
         screen.pen = Pen(0, 255, 0);
-        //screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
         screen.text("GAME OVER", font, Point(120, 120));
     }
     if (inWin){
         screen.pen = Pen(0, 255, 0);
-        //screen.rectangle(Rect(0, 0, SCREEN_WEIGHT, SCREEN_HEIGHT));
         screen.text("WIN!!!", font, Point(120, 120));
     }
 }
@@ -121,9 +119,6 @@ void Minesweeper::checkTile(Point location){
     }
     if (MAP[location.y][location.x].isBomb){
         MAP[location.y][location.x].isOpened = true;
-        if (Point(location.x, location.y) == CursorLocation + Point(1, 1)){
-            gameOver = true;
-        }
         return;
     }
     if (MAP[location.y + 1][location.x - 1].isBomb){
@@ -176,7 +171,7 @@ void Minesweeper::openAllTiles(){
         for (int x = 0; x < MAP_SIZE; x++){
             MAP[y + 1][x + 1].isQuestionMarked = false;
             MAP[y + 1][x + 1].isFlagged = false;
-            checkTile(Point(y + 1, x + 1));
+            checkTile(Point(x + 1, y + 1));
         }
     } 
 }
@@ -270,6 +265,10 @@ void Minesweeper::update(){
     if (buttons.pressed & Button::B){
         MAP[CursorLocation.y + 1][CursorLocation.x + 1].bKeyHandler();
     }
+    
+    if (MAP[CursorLocation.y + 1][CursorLocation.x + 1].isBomb && MAP[CursorLocation.y + 1][CursorLocation.x + 1].isOpened){
+        gameOver = true;
+    }
     if (win || gameOver){
         openAllTiles();
     }
@@ -285,7 +284,7 @@ void Minesweeper::plantBombs(Point safeSpot){
 
         if ((bombLocation == safeSpot) || (bombLocation == safeSpot + Point(1, -1)) || 
             (bombLocation == safeSpot + Point(1, 0)) || (bombLocation == safeSpot + Point(1, 1)) ||
-            (bombLocation== safeSpot + Point(0, -1)) || (bombLocation == safeSpot + Point(0, 1)) || 
+            (bombLocation == safeSpot + Point(0, -1)) || (bombLocation == safeSpot + Point(0, 1)) || 
             (bombLocation == safeSpot + Point(-1, -1)) || (bombLocation == safeSpot + Point(-1, 1)) ||
             (bombLocation == safeSpot + Point(-1, 0)) || (MAP[bombLocation.x][bombLocation.y].isBomb) )
         {
